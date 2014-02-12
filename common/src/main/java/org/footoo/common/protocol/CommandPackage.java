@@ -2,7 +2,7 @@
  * Alipay.com Inc.
  * Copyright (c) 2004-2014 All Rights Reserved.
  */
-package org.footoo.net.protocol;
+package org.footoo.common.protocol;
 
 import java.util.Map;
 

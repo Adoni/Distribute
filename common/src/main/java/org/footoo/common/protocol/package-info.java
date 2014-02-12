@@ -7,4 +7,4 @@
  * @author fengjing.yfj
  * @version $Id: package-info.java, v 0.1 2014年2月12日 上午10:32:23 fengjing.yfj Exp $
  */
-package org.footoo.net.protocol;
+package org.footoo.common.protocol;
