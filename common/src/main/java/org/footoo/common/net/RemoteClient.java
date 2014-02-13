@@ -9,7 +9,7 @@ import org.footoo.common.exception.NetTimeoutException;
 import org.footoo.common.protocol.CommandPackage;
 
 /**
- * 客户端接口
+ * 客户端接口，这个接口的实现必须是线程安全的
  * 
  * @author fengjing.yfj
  * @version $Id: RemoteClient.java, v 0.1 2014年2月12日 下午6:52:08 fengjing.yfj Exp $
@@ -60,5 +60,15 @@ public interface RemoteClient {
      */
     public void sendResponseAsync(CommandPackage responsePackage, int timeoutms,
                                   SendedCallback callback);
+
+    /**
+     * 启动客户端
+     */
+    public void start();
+
+    /**
+     * 关闭客户端
+     */
+    public void shutdown();
 
 }

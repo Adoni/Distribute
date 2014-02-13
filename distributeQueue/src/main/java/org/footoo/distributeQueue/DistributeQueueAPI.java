@@ -2,7 +2,7 @@
  * Alipay.com Inc.
  * Copyright (c) 2004-2014 All Rights Reserved.
  */
-package org.footoo.mainServer;
+package org.footoo.distributeQueue;
 
 import org.footoo.common.exception.DistributeCommonException;
 
