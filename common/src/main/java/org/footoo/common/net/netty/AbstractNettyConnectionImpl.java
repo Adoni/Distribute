@@ -7,11 +7,7 @@ package org.footoo.common.net.netty;
 import java.util.Enumeration;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.footoo.common.exception.NetException;
-import org.footoo.common.exception.NetTimeoutException;
-import org.footoo.common.net.SendedCallback;
 import org.footoo.common.protocol.CommandPackage;
-import org.jboss.netty.channel.Channel;
 
 /**
  * 
@@ -21,26 +17,7 @@ import org.jboss.netty.channel.Channel;
 public abstract class AbstractNettyConnectionImpl implements NettyConnection {
 
     /** 监听器列表 */
-    private ConcurrentHashMap<NettyListener, NettyListener> listeners = new ConcurrentHashMap<NettyListener, NettyListener>();
-
-    /** 通信的channel */
-    protected Channel                                       channel;
-
-    /** 
-     * @see org.footoo.common.net.netty.NettyConnection#sendResponseSync(org.footoo.common.protocol.CommandPackage, int)
-     */
-    @Override
-    public void sendResponseSync(CommandPackage commandPackage, int timeoutms)
-                                                                              throws NetTimeoutException,
-                                                                              NetException {
-    }
-
-    /** 
-     * @see org.footoo.common.net.netty.NettyConnection#sendResponseAsync(org.footoo.common.protocol.CommandPackage, org.footoo.common.net.SendedCallback)
-     */
-    @Override
-    public void sendResponseAsync(CommandPackage commandPackage, SendedCallback callback) {
-    }
+    protected ConcurrentHashMap<NettyListener, NettyListener> listeners = new ConcurrentHashMap<NettyListener, NettyListener>();
 
     /** 
      * @see org.footoo.common.net.netty.NettyConnection#registerNettyListener(org.footoo.common.net.netty.NettyListener)

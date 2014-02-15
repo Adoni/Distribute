@@ -8,6 +8,7 @@ import org.footoo.common.exception.DistributeCommonException;
 import org.footoo.common.exception.NetException;
 import org.footoo.common.exception.NetTimeoutException;
 import org.footoo.common.net.CommandInvokedCallback;
+import org.footoo.common.net.SendedCallback;
 import org.footoo.common.protocol.CommandPackage;
 
 /**
@@ -17,6 +18,41 @@ import org.footoo.common.protocol.CommandPackage;
  * @version $Id: NettyClientConnection.java, v 0.1 2014年2月15日 下午7:11:22 fengjing.yfj Exp $
  */
 public interface NettyClientConnection extends NettyConnection {
+
+    /**
+     * 获取连接的目标的地址
+     * 
+     * @return 目标地址
+     */
+    public String getDestAddr();
+
+    /**
+     * 获取连接的目标端口
+     * 
+     * @return 目标端口
+     */
+    public int getPort();
+
+    /**
+     * 以同步的方式发送响应报文
+     * 
+     * @param commandPackage 响应报文
+     * @param timeoutms 超时时间（ms)
+     * @throws NetTimeoutException
+     * @throws NetException
+     */
+    public void sendResponseSync(CommandPackage commandPackage, int timeoutms)
+                                                                              throws NetTimeoutException,
+                                                                              NetException;
+
+    /**
+     * 以异步方式发送响应报文
+     * 
+     * @param commandPackage 响应报文
+     * @param callback 发送结束的回调函数
+     */
+    public void sendResponseAsync(CommandPackage commandPackage, SendedCallback callback);
+
     /**
      * 同步的方式调用请求
      * 

@@ -14,11 +14,11 @@ import org.jboss.netty.channel.Channels;
  * @author fengjing.yfj
  * @version $Id: NettyChannelPipleFactory.java, v 0.1 2014年2月14日 下午4:50:46 fengjing.yfj Exp $
  */
-public class ClientChannelPipleFactory implements ChannelPipelineFactory {
+public class NettyClientChannelPipleFactory implements ChannelPipelineFactory {
     /** 连接 */
     private final NettyClientConnectionImpl nettyConnectionImpl;
 
-    public ClientChannelPipleFactory(NettyClientConnectionImpl nettyConnectionImpl) {
+    public NettyClientChannelPipleFactory(NettyClientConnectionImpl nettyConnectionImpl) {
         this.nettyConnectionImpl = nettyConnectionImpl;
     }
 

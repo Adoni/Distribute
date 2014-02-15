@@ -15,6 +15,7 @@ import org.footoo.common.exception.DistributeCommonException;
 import org.footoo.common.exception.NetException;
 import org.footoo.common.exception.NetTimeoutException;
 import org.footoo.common.net.CommandInvokedCallback;
+import org.footoo.common.net.SendedCallback;
 import org.footoo.common.protocol.CommandPackage;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -30,7 +31,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
  * @version $Id: NettyConnectionImpl.java, v 0.1 2014年2月14日 下午2:40:01 fengjing.yfj Exp $
  */
 public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl implements
-                                                                    NettyClientConnection {
+                                                                          NettyClientConnection {
 
     /** 正在发送的报文的缓冲区 */
     private ConcurrentHashMap<ChannelFuture, SendingPackageInfo> sendingPackages  = new ConcurrentHashMap<ChannelFuture, SendingPackageInfo>();
@@ -106,7 +107,7 @@ public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl imple
             }
             ClientBootstrap clientBootstrap = new ClientBootstrap(channelFactory);
             //设置处理链
-            clientBootstrap.setPipelineFactory(new ClientChannelPipleFactory(this));
+            clientBootstrap.setPipelineFactory(new NettyClientChannelPipleFactory(this));
             //进行连接
             ChannelFuture future = clientBootstrap.connect(new InetSocketAddress(addr, port));
 
@@ -191,6 +192,11 @@ public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl imple
         return addr;
     }
 
+    @Override
+    public int getPort() {
+        return port;
+    }
+
     /** 
      * @throws DistributeCommonException 
      * @throws  
@@ -265,8 +271,7 @@ public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl imple
     }
 
     @Override
-    public int getPort() {
-        return port;
+    public void sendResponseAsync(CommandPackage commandPackage, SendedCallback callback) {
     }
 
 }

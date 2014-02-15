@@ -12,7 +12,9 @@ package org.footoo.common.protocol;
  */
 public enum CommandErrorCode {
     /** 处理成功 */
-    OK(0, "处理成功");
+    OK(0, "处理成功"),
+    /** 服务端内部错误 */
+    SERVER_INNER_ERROR(1, "服务端内部错误"), ;
 
     /** 错误码 */
     private final int    code;
