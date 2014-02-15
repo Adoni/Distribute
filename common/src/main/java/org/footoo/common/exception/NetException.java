@@ -19,8 +19,8 @@ public class NetException extends DistributeCommonException {
         super();
     }
 
-    public NetException(Exception e, String info) {
-        super(e, info);
+    public NetException(Throwable throwable, String info) {
+        super(throwable, info);
     }
 
     public NetException(Exception e) {

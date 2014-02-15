@@ -6,6 +6,7 @@ package org.footoo.common.net.netty;
 
 import org.footoo.common.exception.NetException;
 import org.footoo.common.exception.NetTimeoutException;
+import org.footoo.common.net.CommandInvokedCallback;
 import org.footoo.common.net.SendedCallback;
 import org.footoo.common.protocol.CommandPackage;
 
@@ -26,6 +27,29 @@ public interface NettyConnection {
     public String getDestAddr();
 
     /**
+     * 同步的方式调用请求
+     * 
+     * @param commandPackage 请求包
+     * @param timeoutms 超时时间（ms)
+     * @return 处理的结果的包
+     * @throws NetTimeoutException
+     * @throws NetException
+     */
+    public CommandPackage invokeCommandSync(CommandPackage commandPackage, int timeoutms)
+                                                                                         throws NetTimeoutException,
+                                                                                         NetException;
+
+    /**
+     * 异步的方式调用请求
+     * 
+     * @param commandPackage 请求包
+     * @param timeoutms 超时时间(ms)
+     * @param callback 回调函数
+     */
+    public void invokeCommandAsync(CommandPackage commandPackage, int timeoutms,
+                                   CommandInvokedCallback callback);
+
+    /**
      * 以同步的方式发送响应报文
      * 
      * @param commandPackage 响应报文
@@ -33,19 +57,17 @@ public interface NettyConnection {
      * @throws NetTimeoutException
      * @throws NetException
      */
-    public void sendPackageSync(CommandPackage commandPackage, int timeoutms)
-                                                                             throws NetTimeoutException,
-                                                                             NetException;
+    public void sendResponseSync(CommandPackage commandPackage, int timeoutms)
+                                                                              throws NetTimeoutException,
+                                                                              NetException;
 
     /**
      * 以异步方式发送响应报文
      * 
      * @param commandPackage 响应报文
-     * @param timeoutms 超时时间(ms)
      * @param callback 发送结束的回调函数
      */
-    public void sendResponseAsync(CommandPackage commandPackage, int timeoutms,
-                                  SendedCallback callback);
+    public void sendResponseAsync(CommandPackage commandPackage, SendedCallback callback);
 
     /**
      * 注册监听器

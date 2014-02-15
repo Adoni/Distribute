@@ -27,8 +27,8 @@ public class DistributeCommonException extends Exception {
         super(info);
     }
 
-    public DistributeCommonException(Exception e, String info) {
-        super(info, e);
+    public DistributeCommonException(Throwable throwable, String info) {
+        super(info, throwable);
     }
 
 }

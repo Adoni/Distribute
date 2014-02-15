@@ -23,7 +23,7 @@ public class CommandPackage {
     /** 自定义扩展字段 */
     private Map<Object, Object> extInfo;
     /** 用于连接复用,一般使用的是线程的pthreadID */
-    private int                 opaque;
+    private long                opaque;
     /** 实际存放的数据 */
     private byte[]              body;
 
@@ -170,7 +170,7 @@ public class CommandPackage {
      * 
      * @return property value of opaque
      */
-    public int getOpaque() {
+    public long getOpaque() {
         return opaque;
     }
 
@@ -179,7 +179,7 @@ public class CommandPackage {
      * 
      * @param opaque value to be assigned to property opaque
      */
-    public void setOpaque(int opaque) {
+    public void setOpaque(long opaque) {
         this.opaque = opaque;
     }
 
