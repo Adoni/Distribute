@@ -9,16 +9,16 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 
 /**
- * pipeline的工厂方法
+ * 客户端的pipeline的工厂方法
  * 
  * @author fengjing.yfj
  * @version $Id: NettyChannelPipleFactory.java, v 0.1 2014年2月14日 下午4:50:46 fengjing.yfj Exp $
  */
-public class NettyChannelPipleFactory implements ChannelPipelineFactory {
+public class ClientChannelPipleFactory implements ChannelPipelineFactory {
     /** 连接 */
-    private final NettyConnectionImpl nettyConnectionImpl;
+    private final NettyClientConnectionImpl nettyConnectionImpl;
 
-    public NettyChannelPipleFactory(NettyConnectionImpl nettyConnectionImpl) {
+    public ClientChannelPipleFactory(NettyClientConnectionImpl nettyConnectionImpl) {
         this.nettyConnectionImpl = nettyConnectionImpl;
     }
 
@@ -31,6 +31,7 @@ public class NettyChannelPipleFactory implements ChannelPipelineFactory {
         //添加工具链
         channelPipeline.addLast("decoder", new CommandPackageDecoder(nettyConnectionImpl));
         channelPipeline.addLast("encoder", new CommandPackageEncoder(nettyConnectionImpl));
+        channelPipeline.addLast("handler", new NettyClientChannelHandler(nettyConnectionImpl));
         return channelPipeline;
     }
 

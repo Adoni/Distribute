@@ -19,8 +19,8 @@ public class DistributeCommonException extends Exception {
         super();
     }
 
-    public DistributeCommonException(Exception e) {
-        super(e);
+    public DistributeCommonException(Throwable cause) {
+        super(cause);
     }
 
     public DistributeCommonException(String info) {

@@ -30,6 +30,10 @@ public class SendingPackageInfo {
     private boolean                oneWay;
     /** 同步工具 */
     private CountDownLatch         countDownLatch;
+    /** 响应的报文 */
+    private CommandPackage         responsePackage;
+    /** 处理时发生的异常 */
+    private Throwable              cause;
 
     /**
      * Getter method for property <tt>commandPackage</tt>.
@@ -137,6 +141,42 @@ public class SendingPackageInfo {
      */
     public void setCountDownLatch(CountDownLatch countDownLatch) {
         this.countDownLatch = countDownLatch;
+    }
+
+    /**
+     * Getter method for property <tt>responsePackage</tt>.
+     * 
+     * @return property value of responsePackage
+     */
+    public CommandPackage getResponsePackage() {
+        return responsePackage;
+    }
+
+    /**
+     * Setter method for property <tt>responsePackage</tt>.
+     * 
+     * @param responsePackage value to be assigned to property responsePackage
+     */
+    public void setResponsePackage(CommandPackage responsePackage) {
+        this.responsePackage = responsePackage;
+    }
+
+    /**
+     * Getter method for property <tt>cause</tt>.
+     * 
+     * @return property value of cause
+     */
+    public Throwable getCause() {
+        return cause;
+    }
+
+    /**
+     * Setter method for property <tt>cause</tt>.
+     * 
+     * @param cause value to be assigned to property cause
+     */
+    public void setCause(Throwable cause) {
+        this.cause = cause;
     }
 
 }

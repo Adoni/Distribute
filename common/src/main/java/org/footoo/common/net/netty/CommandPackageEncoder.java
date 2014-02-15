@@ -20,10 +20,10 @@ import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
  */
 public class CommandPackageEncoder extends OneToOneEncoder {
 
-    private final NettyConnectionImpl nettyConnectionImpl;
+    private final NettyConnection nettyConnection;
 
-    public CommandPackageEncoder(NettyConnectionImpl nettyConnectionImpl) {
-        this.nettyConnectionImpl = nettyConnectionImpl;
+    public CommandPackageEncoder(NettyConnection nettyConnection) {
+        this.nettyConnection = nettyConnection;
     }
 
     /** 
@@ -44,7 +44,7 @@ public class CommandPackageEncoder extends OneToOneEncoder {
         buffer.writeInt(array.length);
         buffer.writeBytes(array);
         //调用同步函数
-        nettyConnectionImpl.invokeBeforePackageSendRecv((CommandPackage) obj);
+        nettyConnection.invokeBeforePackageSendRecv((CommandPackage) obj);
 
         return buffer;
     }

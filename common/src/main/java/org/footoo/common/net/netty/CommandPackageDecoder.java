@@ -19,10 +19,10 @@ import org.jboss.netty.handler.codec.frame.FrameDecoder;
  * @version $Id: CommandPackageDecoder.java, v 0.1 2014年2月14日 下午3:46:43 fengjing.yfj Exp $
  */
 public class CommandPackageDecoder extends FrameDecoder {
-    private final NettyConnectionImpl nettyConnectionImpl;
+    private final NettyConnection nettyConnection;
 
-    public CommandPackageDecoder(NettyConnectionImpl nettyConnectionImpl) {
-        this.nettyConnectionImpl = nettyConnectionImpl;
+    public CommandPackageDecoder(NettyConnection nettyConnection) {
+        this.nettyConnection = nettyConnection;
     }
 
     /** 
@@ -40,7 +40,7 @@ public class CommandPackageDecoder extends FrameDecoder {
         int len = buffer.getInt(buffer.readerIndex());
 
         //调用同步函数,这个是被多次调用的，需要被调用者进行去重
-        nettyConnectionImpl.invokeRecvNewPackageSync(len);
+        nettyConnection.invokeRecvNewPackageSync(len);
 
         //看看完整的包是否已经获取到
         if (buffer.readableBytes() < len + 4) {
@@ -56,7 +56,7 @@ public class CommandPackageDecoder extends FrameDecoder {
         CommandPackage commandPackage = JsonSerializable.deserialize(new String(datas),
             CommandPackage.class);
         //调用同步方法
-        nettyConnectionImpl.invokeRecvFullPackageSync(commandPackage);
+        nettyConnection.invokeRecvFullPackageSync(commandPackage);
 
         //解析出来了一个包
         return commandPackage;

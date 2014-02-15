@@ -5,16 +5,16 @@
 package org.footoo.common.net.netty;
 
 import java.net.InetSocketAddress;
-import java.util.Enumeration;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.footoo.common.exception.DistributeCommonException;
 import org.footoo.common.exception.NetException;
 import org.footoo.common.exception.NetTimeoutException;
 import org.footoo.common.net.CommandInvokedCallback;
-import org.footoo.common.net.SendedCallback;
 import org.footoo.common.protocol.CommandPackage;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -29,7 +29,8 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
  * @author fengjing.yfj
  * @version $Id: NettyConnectionImpl.java, v 0.1 2014年2月14日 下午2:40:01 fengjing.yfj Exp $
  */
-public class NettyConnectionImpl implements NettyConnection {
+public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl implements
+                                                                    NettyClientConnection {
 
     /** 正在发送的报文的缓冲区 */
     private ConcurrentHashMap<ChannelFuture, SendingPackageInfo> sendingPackages  = new ConcurrentHashMap<ChannelFuture, SendingPackageInfo>();
@@ -49,9 +50,6 @@ public class NettyConnectionImpl implements NettyConnection {
     /** channel Factory */
     private ChannelFactory                                       channelFactory;
 
-    /** 监听器列表 */
-    private ConcurrentHashMap<NettyListener, NettyListener>      listeners        = new ConcurrentHashMap<NettyListener, NettyListener>();
-
     /** 状态 */
     private Status                                               status           = Status.INIT;
 
@@ -60,7 +58,7 @@ public class NettyConnectionImpl implements NettyConnection {
      * 
      * @param addr
      */
-    public NettyConnectionImpl(String addr) {
+    public NettyClientConnectionImpl(String addr) {
         this.addr = addr;
     }
 
@@ -69,16 +67,16 @@ public class NettyConnectionImpl implements NettyConnection {
      * 
      * @param port
      */
-    public NettyConnectionImpl(int port) {
+    public NettyClientConnectionImpl(int port) {
         this.port = port;
     }
 
-    public NettyConnectionImpl(String addr, int port) {
+    public NettyClientConnectionImpl(String addr, int port) {
         this.addr = addr;
         this.port = port;
     }
 
-    public NettyConnectionImpl(Channel channel) {
+    public NettyClientConnectionImpl(Channel channel) {
         this.channel = channel;
         InetSocketAddress socketAddress = (InetSocketAddress) channel.getRemoteAddress();
         //已经设置了地址
@@ -88,7 +86,7 @@ public class NettyConnectionImpl implements NettyConnection {
         }
     }
 
-    public NettyConnectionImpl(Channel channel, String addr, int port) {
+    public NettyClientConnectionImpl(Channel channel, String addr, int port) {
         this.channel = channel;
         this.port = port;
         this.addr = addr;
@@ -107,6 +105,9 @@ public class NettyConnectionImpl implements NettyConnection {
                 channelFactory = new NioClientSocketChannelFactory(executor, executor);
             }
             ClientBootstrap clientBootstrap = new ClientBootstrap(channelFactory);
+            //设置处理链
+            clientBootstrap.setPipelineFactory(new ClientChannelPipleFactory(this));
+            //进行连接
             ChannelFuture future = clientBootstrap.connect(new InetSocketAddress(addr, port));
 
             future.addListener(new ChannelFutureListener() {
@@ -114,6 +115,7 @@ public class NettyConnectionImpl implements NettyConnection {
                 @Override
                 public void operationComplete(ChannelFuture f) throws Exception {
                     if (!f.isSuccess()) {
+                        status = Status.STOPPED;
                         throw new NetException(f.getCause(), "连接[" + addr + ":" + port + "]失败");
                     } else {
                         //设置channel
@@ -126,11 +128,15 @@ public class NettyConnectionImpl implements NettyConnection {
             try {
                 future.await();
             } catch (InterruptedException e) {
+                status = Status.STOPPED;
                 throw new DistributeCommonException(e);
             }
 
         } else if (!channel.isConnected()) {
-            channel.connect(new InetSocketAddress(addr, port));
+            //重新连接一下
+            //channel.connect(new InetSocketAddress(addr, port));
+            status = Status.STOPPED;
+            throw new DistributeCommonException("无法启动关闭的连接");
         }
         status = Status.RUNNING;
     }
@@ -160,79 +166,21 @@ public class NettyConnectionImpl implements NettyConnection {
         return status == Status.RUNNING;
     }
 
-    /** 防止多次调用 */
-    private boolean invokedRecvNewPackage = false;
-
     /**
-     * 调用接受到新的包时的回调函数
-     * 注意，只要一有包含长度的报文到达，就会调用这个函数
-     * 所以这个函数必须使用invokedRecvNewPackage
+     * 保存响应报文
      * 
-     * @param len
+     * @param commandPackage
      */
-    public void invokeRecvNewPackageSync(int len) {
-        //还是在接受同一个包
-        if (invokedRecvNewPackage) {
+    public void saveResponsePackage(CommandPackage commandPackage) {
+        SendingPackageInfo sendingPackageInfo = responsePackages.get(commandPackage.getOpaque());
+        //可能已经发生超时，用于保存响应信息的槽已经被删除
+        if (sendingPackageInfo == null) {
             return;
         }
-        //调用同步函数
-        Enumeration<NettyListener> listenerList = listeners.keys();
-        while (listenerList.hasMoreElements()) {
-            NettyListener listener = listenerList.nextElement();
-            if (listener instanceof NettyRecvPackageListener) {
-                ((NettyRecvPackageListener) listener).newPackageComing(len);
-            }
-        }
-    }
-
-    /**
-     * 接收到一个完整的包，调用的回调函数
-     * 
-     * @param commandPackage
-     */
-    public void invokeRecvFullPackageSync(CommandPackage commandPackage) {
-        //可以继续调用接受到新package的同步函数
-        invokedRecvNewPackage = false;
-        //调用同步函数
-        Enumeration<NettyListener> listenerList = listeners.keys();
-        while (listenerList.hasMoreElements()) {
-            NettyListener listener = listenerList.nextElement();
-            if (listener instanceof NettyRecvPackageListener) {
-                ((NettyRecvPackageListener) listener).fullPackageReceived(commandPackage);
-            }
-        }
-    }
-
-    /**
-     * 发送一个报文前调用的同步函数
-     * 
-     * @param commandPackage
-     */
-    public void invokeBeforePackageSendRecv(CommandPackage commandPackage) {
-        //调用同步函数
-        Enumeration<NettyListener> listenerList = listeners.keys();
-        while (listenerList.hasMoreElements()) {
-            NettyListener listener = listenerList.nextElement();
-            if (listener instanceof NettySendPackageListener) {
-                ((NettySendPackageListener) listener).beforePackageSend(commandPackage);
-            }
-        }
-    }
-
-    /**
-     * 发送一个报文后调用的同步函数
-     * 
-     * @param commandPackage
-     */
-    public void invokeAfterPackageSendRecv(CommandPackage commandPackage) {
-        //调用同步函数
-        Enumeration<NettyListener> listenerList = listeners.keys();
-        while (listenerList.hasMoreElements()) {
-            NettyListener listener = listenerList.nextElement();
-            if (listener instanceof NettySendPackageListener) {
-                ((NettySendPackageListener) listener).afterPackageSend(commandPackage);
-            }
-        }
+        //开始保存数据
+        sendingPackageInfo.setResponsePackage(commandPackage);
+        //唤醒等待数据响应的线程
+        sendingPackageInfo.getCountDownLatch().countDown();
     }
 
     /** 
@@ -244,18 +192,59 @@ public class NettyConnectionImpl implements NettyConnection {
     }
 
     /** 
+     * @throws DistributeCommonException 
+     * @throws  
      * @see org.footoo.common.net.netty.NettyConnection#invokeCommandSync(org.footoo.common.protocol.CommandPackage, int)
      */
     @Override
     public CommandPackage invokeCommandSync(CommandPackage commandPackage, int timeoutms)
-                                                                                         throws NetTimeoutException,
-                                                                                         NetException {
+                                                                                         throws DistributeCommonException {
         //没有在运行，不能发送
         if (!isRunning()) {
-
+            throw new NetException("还没有启动连接,或者连接还没有完成");
         }
+        //发送数据
+        ChannelFuture future = channel.write(commandPackage);
+        //保存发送的数据的信息
+        SendingPackageInfo sendingPackageInfo = new SendingPackageInfo();
+        //初始化保存的发送数据信息
+        sendingPackageInfo.setChannelFuture(future);
+        sendingPackageInfo.setOneWay(false);
+        sendingPackageInfo.setCommandPackage(commandPackage);
+        sendingPackageInfo.setCountDownLatch(new CountDownLatch(1));
+        //保存到请求结果处
+        responsePackages.put(commandPackage.getOpaque(), sendingPackageInfo);
+        //等待超时
+        try {
+            sendingPackageInfo.getCountDownLatch().await(timeoutms, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            //throw new DistributeCommonException(e);
+            ;
+        }
+        //获取报文信息
+        sendingPackageInfo = responsePackages.remove(commandPackage.getOpaque());
+        //不可能出现的情况
+        if (sendingPackageInfo == null) {
+            throw new DistributeCommonException("无法获取报文[" + commandPackage + "]的报文信息");
+        }
+        //无法获取响应的报文
+        if (sendingPackageInfo.getResponsePackage() == null) {
+            Throwable cause = sendingPackageInfo.getCause();
+            //出现异常
+            if (cause != null) {
+                if (cause instanceof DistributeCommonException) {
+                    throw (DistributeCommonException) cause;
+                } else {
+                    throw new DistributeCommonException(cause);
+                }
+            } else {
+                //超时
+                throw new NetTimeoutException("invokeCommandSync发生超时");
+            }
+        }
+        //成功获取到响应报文
 
-        return null;
+        return sendingPackageInfo.getResponsePackage();
     }
 
     /** 
@@ -275,25 +264,9 @@ public class NettyConnectionImpl implements NettyConnection {
                                                                               NetException {
     }
 
-    /** 
-     * @see org.footoo.common.net.netty.NettyConnection#sendResponseAsync(org.footoo.common.protocol.CommandPackage, org.footoo.common.net.SendedCallback)
-     */
     @Override
-    public void sendResponseAsync(CommandPackage commandPackage, SendedCallback callback) {
-    }
-
-    /** 
-     * @see org.footoo.common.net.netty.NettyConnection#registerNettyListener(org.footoo.common.net.netty.NettyListener)
-     */
-    @Override
-    public void registerNettyListener(NettyListener listener) {
-    }
-
-    /** 
-     * @see org.footoo.common.net.netty.NettyConnection#unregisterNettyListener(org.footoo.common.net.netty.NettyListener)
-     */
-    @Override
-    public void unregisterNettyListener(NettyListener listener) {
+    public int getPort() {
+        return port;
     }
 
 }
