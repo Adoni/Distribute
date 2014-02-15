@@ -25,7 +25,7 @@ public interface SendedCallback {
      * 异常发生
      * 
      * @param commandPackage 想要发送的报文
-     * @param exception 发生的异常信息
+     * @param throwable 发生的异常信息
      */
-    public void exceptionOccur(CommandPackage commandPackage, Exception exception);
+    public void exceptionOccur(CommandPackage commandPackage, Throwable throwable);
 }

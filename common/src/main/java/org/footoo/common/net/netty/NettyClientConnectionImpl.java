@@ -146,7 +146,10 @@ public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl imple
      * 关闭
      */
     public void shutDown() {
-
+        if (isRunning()) {
+            channel.close();
+            status = Status.STOPPED;
+        }
     }
 
     /**
@@ -178,6 +181,11 @@ public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl imple
         if (sendingPackageInfo == null) {
             return;
         }
+        //异步的方式，不需要实际保存数据
+        if (sendingPackageInfo.isAsync()) {
+            handleAsyncResponse(commandPackage);
+            return;
+        }
         //开始保存数据
         sendingPackageInfo.setResponsePackage(commandPackage);
         //唤醒等待数据响应的线程
@@ -195,6 +203,22 @@ public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl imple
     @Override
     public int getPort() {
         return port;
+    }
+
+    /**
+     * 处理异步报文的到达
+     * 
+     * @param responsePackage
+     */
+    public void handleAsyncResponse(CommandPackage responsePackage) {
+        SendingPackageInfo sendingPackageInfo = responsePackages
+            .remove(responsePackage.getOpaque());
+        if (sendingPackageInfo == null || sendingPackageInfo.getCommandInvokedCallback() == null) {
+            return;
+        }
+
+        sendingPackageInfo.getCommandInvokedCallback().responseReceived(responsePackage);
+
     }
 
     /** 
@@ -215,7 +239,7 @@ public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl imple
         SendingPackageInfo sendingPackageInfo = new SendingPackageInfo();
         //初始化保存的发送数据信息
         sendingPackageInfo.setChannelFuture(future);
-        sendingPackageInfo.setOneWay(false);
+        sendingPackageInfo.setAsync(false);
         sendingPackageInfo.setCommandPackage(commandPackage);
         sendingPackageInfo.setCountDownLatch(new CountDownLatch(1));
         //保存到请求结果处
@@ -253,25 +277,121 @@ public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl imple
         return sendingPackageInfo.getResponsePackage();
     }
 
-    /** 
-     * @see org.footoo.common.net.netty.NettyConnection#invokeCommandAsync(org.footoo.common.protocol.CommandPackage, int, org.footoo.common.net.CommandInvokedCallback)
-     */
     @Override
-    public void invokeCommandAsync(CommandPackage commandPackage, int timeoutms,
-                                   CommandInvokedCallback callback) {
+    public void invokeCommandAsync(CommandPackage commandPackage, CommandInvokedCallback callback)
+                                                                                                  throws NetException {
+        //没有在运行，不能发送
+        if (!isRunning()) {
+            throw new NetException("还没有启动连接,或者连接还没有完成");
+        }
+        //发送数据
+        ChannelFuture future = channel.write(commandPackage);
+        //保存发送的数据的信息
+        SendingPackageInfo sendingPackageInfo = new SendingPackageInfo();
+        //初始化保存的发送数据信息
+        sendingPackageInfo.setChannelFuture(future);
+        sendingPackageInfo.setAsync(true);
+        sendingPackageInfo.setCommandPackage(commandPackage);
+        sendingPackageInfo.setCountDownLatch(null);
+        sendingPackageInfo.setCommandInvokedCallback(callback);
+
+        //保存到请求结果处
+        responsePackages.put(commandPackage.getOpaque(), sendingPackageInfo);
     }
 
     /** 
+     * @throws DistributeCommonException 
      * @see org.footoo.common.net.netty.NettyConnection#sendResponseSync(org.footoo.common.protocol.CommandPackage, int)
      */
     @Override
     public void sendResponseSync(CommandPackage commandPackage, int timeoutms)
-                                                                              throws NetTimeoutException,
-                                                                              NetException {
+                                                                              throws DistributeCommonException {
+        //没有在运行，不能发送
+        if (!isRunning()) {
+            throw new NetException("还没有启动连接,或者连接还没有完成");
+        }
+        //发送数据
+        ChannelFuture future = channel.write(commandPackage);
+        //保存发送的数据的信息
+        SendingPackageInfo sendingPackageInfo = new SendingPackageInfo();
+        //初始化保存的发送数据信息
+        sendingPackageInfo.setChannelFuture(future);
+        sendingPackageInfo.setAsync(false);
+        sendingPackageInfo.setCommandPackage(commandPackage);
+        sendingPackageInfo.setCountDownLatch(new CountDownLatch(1));
+        //保存到请求结果处
+        sendingPackages.put(future, sendingPackageInfo);
+        //
+        future.addListener(new ChannelFutureListener() {
+
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                SendingPackageInfo packageInfo = sendingPackages.get(future);
+                if (packageInfo == null) {
+                    return;
+                }
+                if (future.isSuccess()) {
+                    packageInfo.setSuccess(true);
+                } else {
+                    packageInfo.setSuccess(false);
+                    packageInfo.setCause(future.getCause());
+                }
+            }
+        });
+
+        //等待超时
+        try {
+            sendingPackageInfo.getCountDownLatch().await(timeoutms, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            //throw new DistributeCommonException(e);
+            ;
+        }
+        //查看结果
+        sendingPackageInfo = sendingPackages.get(future);
+        if (sendingPackageInfo == null) {
+            throw new DistributeCommonException("无法获取package信息");
+        }
+        //
+        if (!sendingPackageInfo.isSuccess()) {
+            //超时
+            if (sendingPackageInfo.getCause() == null) {
+                throw new NetTimeoutException("发送报文[" + commandPackage + "]超时");
+            }
+            //本系统异常
+            else if (sendingPackageInfo.getCause() instanceof DistributeCommonException) {
+                throw (DistributeCommonException) sendingPackageInfo.getCause();
+            }
+            //其他异常，包裹一下
+            else {
+                throw new DistributeCommonException(sendingPackageInfo.getCause());
+            }
+        }
     }
 
     @Override
-    public void sendResponseAsync(CommandPackage commandPackage, SendedCallback callback) {
+    public void sendResponseAsync(final CommandPackage commandPackage, final SendedCallback callback)
+                                                                                                     throws NetException {
+        //没有在运行，不能发送
+        if (!isRunning()) {
+            throw new NetException("还没有启动连接,或者连接还没有完成");
+        }
+        //发送数据
+        ChannelFuture future = channel.write(commandPackage);
+
+        //
+        if (callback != null) {
+            future.addListener(new ChannelFutureListener() {
+
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    if (future.isSuccess()) {
+                        callback.sendOK(commandPackage);
+                    } else {
+                        callback.exceptionOccur(commandPackage, future.getCause());
+                    }
+                }
+            });
+        }
     }
 
 }

@@ -26,14 +26,16 @@ public class SendingPackageInfo {
     private SendedCallback         sendedCallback;
     /** 接受到响应的回调函数 */
     private CommandInvokedCallback commandInvokedCallback;
-    /** 是否需要等待响应报文 */
-    private boolean                oneWay;
+    /** 是否采用的异步的方式 */
+    private boolean                async;
     /** 同步工具 */
     private CountDownLatch         countDownLatch;
     /** 响应的报文 */
     private CommandPackage         responsePackage;
     /** 处理时发生的异常 */
     private Throwable              cause;
+    /** 操作是否成功 */
+    private boolean                success;
 
     /**
      * Getter method for property <tt>commandPackage</tt>.
@@ -112,8 +114,8 @@ public class SendingPackageInfo {
      * 
      * @return property value of oneWay
      */
-    public boolean isOneWay() {
-        return oneWay;
+    public boolean isAsync() {
+        return async;
     }
 
     /**
@@ -121,8 +123,8 @@ public class SendingPackageInfo {
      * 
      * @param oneWay value to be assigned to property oneWay
      */
-    public void setOneWay(boolean oneWay) {
-        this.oneWay = oneWay;
+    public void setAsync(boolean async) {
+        this.async = async;
     }
 
     /**
@@ -177,6 +179,24 @@ public class SendingPackageInfo {
      */
     public void setCause(Throwable cause) {
         this.cause = cause;
+    }
+
+    /**
+     * Getter method for property <tt>success</tt>.
+     * 
+     * @return property value of success
+     */
+    public boolean isSuccess() {
+        return success;
+    }
+
+    /**
+     * Setter method for property <tt>success</tt>.
+     * 
+     * @param success value to be assigned to property success
+     */
+    public void setSuccess(boolean success) {
+        this.success = success;
     }
 
 }

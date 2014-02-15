@@ -40,18 +40,22 @@ public interface NettyClientConnection extends NettyConnection {
      * @param timeoutms 超时时间（ms)
      * @throws NetTimeoutException
      * @throws NetException
+     * @throws DistributeCommonException 
      */
     public void sendResponseSync(CommandPackage commandPackage, int timeoutms)
                                                                               throws NetTimeoutException,
-                                                                              NetException;
+                                                                              NetException,
+                                                                              DistributeCommonException;
 
     /**
      * 以异步方式发送响应报文
      * 
      * @param commandPackage 响应报文
      * @param callback 发送结束的回调函数
+     * @throws NetException 
      */
-    public void sendResponseAsync(CommandPackage commandPackage, SendedCallback callback);
+    public void sendResponseAsync(CommandPackage commandPackage, SendedCallback callback)
+                                                                                         throws NetException;
 
     /**
      * 同步的方式调用请求
@@ -72,9 +76,9 @@ public interface NettyClientConnection extends NettyConnection {
      * 异步的方式调用请求
      * 
      * @param commandPackage 请求包
-     * @param timeoutms 超时时间(ms)
      * @param callback 回调函数
+     * @throws NetException 
      */
-    public void invokeCommandAsync(CommandPackage commandPackage, int timeoutms,
-                                   CommandInvokedCallback callback);
+    public void invokeCommandAsync(CommandPackage commandPackage, CommandInvokedCallback callback)
+                                                                                                  throws NetException;
 }
