@@ -63,6 +63,8 @@ public class NettyServerConnectionImpl extends AbstractNettyConnectionImpl imple
             executor = Executors.newFixedThreadPool(threadPoolSize);
         }
         ChannelFactory channelFactory = new NioServerSocketChannelFactory(executor, executor);
+        //ChannelFactory channelFactory = new NioServerSocketChannelFactory(
+        //Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
         ServerBootstrap serverBootstrap = new ServerBootstrap(channelFactory);
         serverBootstrap.setPipelineFactory(new NettyServerChannelPipleFactory(this));
 

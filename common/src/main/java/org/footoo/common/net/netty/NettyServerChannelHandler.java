@@ -32,12 +32,13 @@ public class NettyServerChannelHandler extends SimpleChannelHandler {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
         //请求包
         CommandPackage requestPackage = (CommandPackage) e.getMessage();
-
+        System.out.println("request" + requestPackage);
         CommandHandler handler = CommandHandlerTable.findHandler(requestPackage.getCode());
         //响应结果
         CommandPackage result;
         try {
             result = handler.handle(requestPackage);
+
         } catch (DistributeCommonException e1) {
             result = new CommandPackage(CommandErrorCode.SERVER_INNER_ERROR, null, 0, null);
         }
@@ -49,10 +50,12 @@ public class NettyServerChannelHandler extends SimpleChannelHandler {
 
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
+        System.out.println(e);
         Channel channel = e.getChannel();
         //调用同步函数
         nettyServerConnectionImpl.invokeConnectionComingSync(
             ((InetSocketAddress) channel.getRemoteAddress()).getAddress().getHostAddress(),
             ((InetSocketAddress) channel.getRemoteAddress()).getPort(), channel);
     }
+
 }

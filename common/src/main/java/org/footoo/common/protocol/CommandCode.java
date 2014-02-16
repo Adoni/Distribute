@@ -12,7 +12,9 @@ package org.footoo.common.protocol;
  */
 public enum CommandCode {
     /** 心跳包 */
-    HEART_BEAT(1, "心跳包");
+    HEART_BEAT(1, "心跳包"),
+    /** ECHO */
+    ECHO(2, "echo"), ;
 
     /** 命令码 */
     private final int    code;

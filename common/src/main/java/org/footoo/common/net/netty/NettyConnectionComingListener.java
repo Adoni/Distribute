@@ -12,7 +12,7 @@ import org.jboss.netty.channel.Channel;
  * @author fengjing.yfj
  * @version $Id: NettyConnectionComing.java, v 0.1 2014年2月15日 下午5:24:18 fengjing.yfj Exp $
  */
-public interface NettyConnectionComingListener {
+public interface NettyConnectionComingListener extends NettyListener {
     /**
      * 连接正在建立
      * 

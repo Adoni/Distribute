@@ -29,8 +29,9 @@ public class NettyServerChannelPipleFactory implements ChannelPipelineFactory {
         ChannelPipeline pipeline = Channels.pipeline();
         pipeline.addLast("encoder", new CommandPackageEncoder(nettyServerConnection));
         pipeline.addLast("decoder", new CommandPackageDecoder(nettyServerConnection));
+        pipeline.addLast("handler", new NettyServerChannelHandler(nettyServerConnection));
 
-        return null;
+        return pipeline;
     }
 
 }

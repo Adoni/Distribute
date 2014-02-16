@@ -6,6 +6,7 @@ package org.footoo.common.net.netty;
 
 import org.footoo.common.protocol.CommandPackage;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 
@@ -29,6 +30,12 @@ public class NettyClientChannelHandler extends SimpleChannelHandler {
         CommandPackage commandPackage = (CommandPackage) e.getMessage();
         //保存数据
         nettyConnectionImpl.saveResponsePackage(commandPackage);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+        //throw new DistributeCommonException(e.getCause());
+        e.getCause().printStackTrace();
     }
 
 }

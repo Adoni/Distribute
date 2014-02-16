@@ -6,6 +6,9 @@ package org.footoo.common.protocol;
 
 import java.util.Map;
 
+import org.footoo.common.tools.JsonSerializable;
+import org.footoo.common.tools.LongSequenceGenerator;
+
 /**
  * 通信的命令包
  * 这是整个通信过程的最小单元
@@ -35,6 +38,24 @@ public class CommandPackage {
     }
 
     /**
+     * 拷贝构造函数
+     * 
+     * @param other
+     */
+    public CommandPackage(CommandPackage other) {
+        this.version = other.getVersion();
+        this.code = other.getCode();
+        this.info = other.getInfo();
+        this.extInfo = other.getExtInfo();
+        if (other.getBody() != null) {
+            this.body = other.getBody().clone();
+        } else {
+            this.body = null;
+        }
+        this.opaque = other.getOpaque();
+    }
+
+    /**
      * 构造命令包的构造器
      * 
      * @param commandCode 命令码
@@ -42,7 +63,7 @@ public class CommandPackage {
      * @param opaque
      * @param body
      */
-    public CommandPackage(CommandCode commandCode, Map<Object, Object> extInfo, int opaque,
+    public CommandPackage(CommandCode commandCode, Map<Object, Object> extInfo, long opaque,
                           byte[] body) {
         this.version = ProtocolVersion.VERSION;
         if (commandCode != null) {
@@ -63,7 +84,7 @@ public class CommandPackage {
      * @param body
      */
     public CommandPackage(CommandErrorCode commandErrorCode, Map<Object, Object> extInfo,
-                          int opaque, byte[] body) {
+                          long opaque, byte[] body) {
         this.version = ProtocolVersion.VERSION;
         if (commandErrorCode != null) {
             this.code = commandErrorCode.getCode();
@@ -72,6 +93,58 @@ public class CommandPackage {
         this.extInfo = extInfo;
         this.opaque = opaque;
         this.body = body;
+    }
+
+    /**
+     * 自动生成全局唯一的序列
+     */
+    public void generateOpaque() {
+        this.setOpaque(LongSequenceGenerator.generate());
+    }
+
+    /**
+     * 设置错误码
+     * 
+     * @param errorCode
+     */
+    public void setErrorCode(CommandErrorCode commandErrorCode) {
+        if (commandErrorCode != null) {
+            this.code = commandErrorCode.getCode();
+            this.info = commandErrorCode.getInfo();
+        }
+    }
+
+    /**
+     * 设置命令码
+     * 
+     * @param commandCode
+     */
+    public void setCommandCode(CommandCode commandCode) {
+        if (commandCode != null) {
+            this.code = commandCode.getCode();
+            this.info = commandCode.getInfo();
+        }
+    }
+
+    /**
+     * 拷贝构造函数
+     * 
+     * @see java.lang.Object#clone()
+     */
+    @Override
+    public CommandPackage clone() {
+        CommandPackage copy = new CommandPackage();
+
+        if (body != null) {
+            copy.setBody(body.clone());
+        }
+        copy.setCode(code);
+        copy.setExtInfo(extInfo);
+        copy.setInfo(info);
+        copy.setOpaque(opaque);
+        copy.setVersion(version);
+
+        return copy;
     }
 
     /** 
@@ -199,6 +272,11 @@ public class CommandPackage {
      */
     public void setBody(byte[] body) {
         this.body = body;
+    }
+
+    @Override
+    public String toString() {
+        return JsonSerializable.serialize(this);
     }
 
 }

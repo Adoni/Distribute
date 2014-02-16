@@ -110,6 +110,8 @@ public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl imple
             clientBootstrap.setPipelineFactory(new NettyClientChannelPipleFactory(this));
             //进行连接
             ChannelFuture future = clientBootstrap.connect(new InetSocketAddress(addr, port));
+            //同步工具
+            final CountDownLatch countDownLatch = new CountDownLatch(1);
 
             future.addListener(new ChannelFutureListener() {
 
@@ -117,17 +119,20 @@ public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl imple
                 public void operationComplete(ChannelFuture f) throws Exception {
                     if (!f.isSuccess()) {
                         status = Status.STOPPED;
+
                         throw new NetException(f.getCause(), "连接[" + addr + ":" + port + "]失败");
                     } else {
                         //设置channel
                         channel = f.getChannel();
+                        System.out.println("连接成功");
                     }
+                    countDownLatch.countDown();
                 }
             });
 
             //等待连接完成
             try {
-                future.await();
+                countDownLatch.await(10 * 1000, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 status = Status.STOPPED;
                 throw new DistributeCommonException(e);
@@ -139,6 +144,7 @@ public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl imple
             status = Status.STOPPED;
             throw new DistributeCommonException("无法启动关闭的连接");
         }
+
         status = Status.RUNNING;
     }
 
@@ -249,6 +255,7 @@ public class NettyClientConnectionImpl extends AbstractNettyConnectionImpl imple
             sendingPackageInfo.getCountDownLatch().await(timeoutms, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             //throw new DistributeCommonException(e);
+            e.printStackTrace();
             ;
         }
         //获取报文信息

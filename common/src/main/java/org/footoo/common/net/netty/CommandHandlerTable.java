@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.footoo.common.exception.CoverRegisterException;
 import org.footoo.common.exception.InvalidHandlerRegisterException;
+import org.footoo.common.net.netty.handlers.DefaultCommandHandler;
 
 /**
  * 命令句柄的处理表，命令处理表按照命令的code进行句柄查找
@@ -23,7 +24,14 @@ public abstract class CommandHandlerTable {
     private static CommandHandler                                   defaultHandler;
 
     static {
-        setDefaultHandler(defaultHandler);
+        //注册默认的句柄
+        setDefaultHandler(new DefaultCommandHandler());
+        try {
+            //注册echo句柄
+            Class.forName("org.footoo.common.net.netty.handlers.EchoCommandHandler");
+        } catch (ClassNotFoundException e) {
+            ;
+        }
     }
 
     /**

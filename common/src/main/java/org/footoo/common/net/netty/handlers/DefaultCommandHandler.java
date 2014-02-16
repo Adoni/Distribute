@@ -2,9 +2,10 @@
  * Alipay.com Inc.
  * Copyright (c) 2004-2014 All Rights Reserved.
  */
-package org.footoo.common.net.netty;
+package org.footoo.common.net.netty.handlers;
 
 import org.footoo.common.exception.DistributeCommonException;
+import org.footoo.common.net.netty.CommandHandler;
 import org.footoo.common.protocol.CommandPackage;
 
 /**
